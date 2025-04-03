@@ -14,7 +14,7 @@ class DeckViewModel extends ChangeNotifier {
 
   Result<Unit, DeckError> createDeck(String name) {
     return _deckRepository
-        .createDeck(name) //
+        .create(name) //
         .map((deck) {
           decks.add(deck);
           notifyListeners();

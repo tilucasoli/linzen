@@ -12,7 +12,7 @@ void main() {
     test('should add a deck when the method createDeck is called', () {
       final sut = makeSut();
 
-      when(() => sut.mockDeckRepository.createDeck('Test Deck')).thenAnswer(
+      when(() => sut.mockDeckRepository.create('Test Deck')).thenAnswer(
         (_) => Success(
           value: Deck(id: '1', name: 'Test Deck', createdAt: DateTime.now()),
         ),
