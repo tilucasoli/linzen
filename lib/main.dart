@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'ui/home/viewmodel/deck_viewmodel.dart';
 import 'ui/home/widgets/home_screen.dart';
 
 void main() {
@@ -16,7 +17,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const HomeScreen(),
+      home: HomeScreen(viewModel: DeckViewModel()),
     );
   }
 }

@@ -1,9 +1,10 @@
+import 'package:flutter/widgets.dart';
 import 'package:linzen/domain/deck.dart';
 import 'package:linzen/shared/result.dart';
 
 enum DeckError implements Exception { duplicateDeck }
 
-class DeckViewModel {
+class DeckViewModel extends ChangeNotifier {
   final List<Deck> decks = [];
 
   Result<Unit, DeckError> createDeck(String name) {
@@ -12,6 +13,8 @@ class DeckViewModel {
     }
 
     decks.add(Deck(id: '1', name: name, createdAt: DateTime.now()));
+    notifyListeners();
+
     return Success.unit();
   }
 

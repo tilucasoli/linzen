@@ -1,7 +1,15 @@
+import 'package:elegant_spring_animation/elegant_spring_animation.dart';
 import 'package:flutter/material.dart';
+import 'package:linzen/ui/home/viewmodel/deck_viewmodel.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+
+import '../../shared/components/bottom_sheet.dart';
+import '../../shared/components/button.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, required this.viewModel});
+
+  final DeckViewModel viewModel;
 
   @override
   Widget build(BuildContext context) {
@@ -19,19 +27,65 @@ class HomeScreen extends StatelessWidget {
               child: Column(
                 spacing: 16,
                 children: [
-                  Row(
-                    spacing: 16,
-                    children: [
-                      Expanded(
-                        child: _InfoCard(value: '7', title: 'Day Streak'),
-                      ),
-                      Expanded(
-                        child: _InfoCard(value: '10', title: 'Words learned'),
-                      ),
-                    ],
+                  // Row(
+                  //   spacing: 16,
+                  //   children: [
+                  //     Expanded(
+                  //       child: _InfoCard(value: '7', title: 'Day Streak'),
+                  //     ),
+                  //     Expanded(
+                  //       child: _InfoCard(value: '10', title: 'Words learned'),
+                  //     ),
+                  //   ],
+                  // ),
+                  Builder(
+                    builder: (context) {
+                      return _CreateButtonCard(
+                        onPressed: () {
+                          showLinzenBottomSheet(
+                            context,
+                            title: 'Create Deck',
+                            contentBuilder: (context) {
+                              return Column(
+                                spacing: 8,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  TextField(
+                                    decoration: InputDecoration(
+                                      border: OutlineInputBorder(
+                                        borderSide: BorderSide.none,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      hintText: 'Deck Name',
+                                    ),
+                                  ),
+                                  Text(
+                                    'This is the name that will be used to describe the deck',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w400,
+                                      color: Color(0xFF64748B),
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                            buttonBuilder: (context) {
+                              return PrimaryButton(
+                                onPressed: () {},
+                                size: ButtonSize.large,
+                                fullWidth: true,
+                              );
+                            },
+                          );
+                        },
+                      );
+                    },
                   ),
-                  _CreateButtonCard(),
-                  StartSessionCard(),
+                  // StartSessionCard(),
                 ],
               ),
             ),
@@ -52,15 +106,20 @@ class HomeScreen extends StatelessWidget {
             ),
             SliverPadding(
               padding: EdgeInsets.only(bottom: 32),
-              sliver: SliverList.separated(
-                itemCount: 10,
-                separatorBuilder: (context, index) {
-                  return SizedBox(height: 16);
-                },
-                itemBuilder: (context, index) {
-                  return _DeckCard(
-                    title: 'English Phrases',
-                    subtitle: '50 cards needing review',
+              sliver: ListenableBuilder(
+                listenable: viewModel,
+                builder: (context, child) {
+                  return SliverList.separated(
+                    itemCount: viewModel.decks.length,
+                    separatorBuilder: (context, index) {
+                      return SizedBox(height: 16);
+                    },
+                    itemBuilder: (context, index) {
+                      return _DeckCard(
+                        title: viewModel.decks[index].name,
+                        subtitle: 'not implemented',
+                      );
+                    },
                   );
                 },
               ),
@@ -156,6 +215,10 @@ class _DeckCard extends StatelessWidget {
 }
 
 class _CreateButtonCard extends StatelessWidget {
+  const _CreateButtonCard({required this.onPressed});
+
+  final VoidCallback onPressed;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -177,7 +240,7 @@ class _CreateButtonCard extends StatelessWidget {
             ),
           ),
           TextButton(
-            onPressed: () {},
+            onPressed: onPressed,
             style: ButtonStyle(
               shape: WidgetStateProperty.all(
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -278,30 +341,7 @@ class StartSessionCard extends StatelessWidget {
           SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: TextButton(
-              onPressed: () {},
-              style: ButtonStyle(
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                shape: WidgetStateProperty.all(
-                  RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                padding: WidgetStateProperty.all(
-                  EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                ),
-                foregroundColor: WidgetStateProperty.all(Colors.white),
-                textStyle: WidgetStateProperty.all(
-                  TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Inter',
-                  ),
-                ),
-                backgroundColor: WidgetStateProperty.all(Color(0xFF2E333A)),
-              ),
-              child: Text('Start Session'),
-            ),
+            child: PrimaryButton(onPressed: () {}),
           ),
         ],
       ),
