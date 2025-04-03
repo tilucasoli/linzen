@@ -23,6 +23,7 @@ class Card {
   final String front;
   final String back;
   final DateTime createdAt;
+  final ReviewData reviewData;
 }
 
 class ReviewData {
