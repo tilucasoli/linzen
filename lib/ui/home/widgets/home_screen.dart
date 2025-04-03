@@ -1,16 +1,20 @@
-import 'package:elegant_spring_animation/elegant_spring_animation.dart';
 import 'package:flutter/material.dart';
 import 'package:linzen/ui/home/viewmodel/deck_viewmodel.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:linzen/ui/shared/components/create_button_card.dart';
 
 import '../../shared/components/bottom_sheet.dart';
 import '../../shared/components/button.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.viewModel});
 
   final DeckViewModel viewModel;
 
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,65 +31,19 @@ class HomeScreen extends StatelessWidget {
               child: Column(
                 spacing: 16,
                 children: [
-                  // Row(
-                  //   spacing: 16,
-                  //   children: [
-                  //     Expanded(
-                  //       child: _InfoCard(value: '7', title: 'Day Streak'),
-                  //     ),
-                  //     Expanded(
-                  //       child: _InfoCard(value: '10', title: 'Words learned'),
-                  //     ),
-                  //   ],
-                  // ),
-                  Builder(
-                    builder: (context) {
-                      return _CreateButtonCard(
-                        onPressed: () {
-                          showLinzenBottomSheet(
-                            context,
-                            title: 'Create Deck',
-                            contentBuilder: (context) {
-                              return Column(
-                                spacing: 8,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  TextField(
-                                    decoration: InputDecoration(
-                                      border: OutlineInputBorder(
-                                        borderSide: BorderSide.none,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      filled: true,
-                                      fillColor: Colors.white,
-                                      hintText: 'Deck Name',
-                                    ),
-                                  ),
-                                  Text(
-                                    'This is the name that will be used to describe the deck',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w400,
-                                      color: Color(0xFF64748B),
-                                      height: 1.4,
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                            buttonBuilder: (context) {
-                              return PrimaryButton(
-                                onPressed: () {},
-                                size: ButtonSize.large,
-                                fullWidth: true,
-                              );
-                            },
-                          );
-                        },
-                      );
-                    },
+                  Row(
+                    spacing: 16,
+                    children: [
+                      Expanded(
+                        child: _InfoCard(value: '7', title: 'Day Streak'),
+                      ),
+                      Expanded(
+                        child: _InfoCard(value: '10', title: 'Words learned'),
+                      ),
+                    ],
                   ),
-                  // StartSessionCard(),
+                  _CreateDeck(viewModel: widget.viewModel),
+                  StartSessionCard(),
                 ],
               ),
             ),
@@ -107,16 +65,16 @@ class HomeScreen extends StatelessWidget {
             SliverPadding(
               padding: EdgeInsets.only(bottom: 32),
               sliver: ListenableBuilder(
-                listenable: viewModel,
+                listenable: widget.viewModel,
                 builder: (context, child) {
                   return SliverList.separated(
-                    itemCount: viewModel.decks.length,
+                    itemCount: widget.viewModel.decks.length,
                     separatorBuilder: (context, index) {
                       return SizedBox(height: 16);
                     },
                     itemBuilder: (context, index) {
                       return _DeckCard(
-                        title: viewModel.decks[index].name,
+                        title: widget.viewModel.decks[index].name,
                         subtitle: 'not implemented',
                       );
                     },
@@ -128,6 +86,76 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
       backgroundColor: Color(0xFFEAEBEF),
+    );
+  }
+}
+
+class _CreateDeck extends StatefulWidget {
+  const _CreateDeck({required this.viewModel});
+
+  final DeckViewModel viewModel;
+
+  @override
+  State<_CreateDeck> createState() => _CreateDeckState();
+}
+
+class _CreateDeckState extends State<_CreateDeck> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CreateButtonCard(
+      title: 'Create Deck',
+      onPressed: () {
+        showLinzenBottomSheet(
+          context,
+          title: 'Create Deck',
+          contentBuilder: (context) {
+            return Column(
+              spacing: 8,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: _controller,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    hintText: 'Deck Name',
+                  ),
+                ),
+                Text(
+                  'This is the name that will be used to describe the deck',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF64748B),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            );
+          },
+          buttonBuilder: (context) {
+            return PrimaryButton(
+              onPressed: () {
+                widget.viewModel.createDeck(_controller.text);
+              },
+              size: ButtonSize.large,
+              fullWidth: true,
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -206,64 +234,6 @@ class _DeckCard extends StatelessWidget {
               fontWeight: FontWeight.w400,
               fontFamily: 'Inter',
               color: Color(0xFF64748B),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CreateButtonCard extends StatelessWidget {
-  const _CreateButtonCard({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Create Deck',
-            style: TextStyle(
-              fontSize: 16,
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF0F172A),
-            ),
-          ),
-          TextButton(
-            onPressed: onPressed,
-            style: ButtonStyle(
-              shape: WidgetStateProperty.all(
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              padding: WidgetStateProperty.all(
-                EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              ),
-              foregroundColor: WidgetStateProperty.all(Color(0xFF2E333A)),
-              textStyle: WidgetStateProperty.all(
-                TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Inter',
-                ),
-              ),
-              backgroundColor: WidgetStateProperty.all(Color(0xFFEAEBEF)),
-            ),
-            child: Row(
-              spacing: 6,
-              children: [
-                Text('Create'),
-                Icon(Icons.add, size: 20, color: Color(0xFF2E333A)),
-              ],
             ),
           ),
         ],
