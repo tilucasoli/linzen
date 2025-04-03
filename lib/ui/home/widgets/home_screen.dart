@@ -196,6 +196,7 @@ class _CreateButtonCard extends StatelessWidget {
               backgroundColor: WidgetStateProperty.all(Color(0xFFEAEBEF)),
             ),
             child: Row(
+              spacing: 6,
               children: [
                 Text('Create'),
                 Icon(Icons.add, size: 20, color: Color(0xFF2E333A)),
