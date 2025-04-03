@@ -16,6 +16,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   @override
+  void initState() {
+    super.initState();
+    widget.viewModel.fetchDecks();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
@@ -152,6 +158,7 @@ class _CreateDeckState extends State<_CreateDeck> {
               },
               size: ButtonSize.large,
               fullWidth: true,
+              text: 'Create',
             );
           },
         );
@@ -311,7 +318,7 @@ class StartSessionCard extends StatelessWidget {
           SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: PrimaryButton(onPressed: () {}),
+            child: PrimaryButton(onPressed: () {}, text: 'Start Session'),
           ),
         ],
       ),

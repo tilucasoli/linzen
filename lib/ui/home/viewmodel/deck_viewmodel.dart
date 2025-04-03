@@ -10,15 +10,25 @@ class DeckViewModel extends ChangeNotifier {
   DeckViewModel({required DeckRepository deckRepository})
     : _deckRepository = deckRepository;
 
-  final List<Deck> decks = [];
+  List<Deck> _decks = [];
+  List<Deck> get decks => _decks;
 
-  Result<Unit, DeckError> createDeck(String name) {
-    return _deckRepository
-        .create(name) //
-        .map((deck) {
-          decks.add(deck);
-          notifyListeners();
-          return unit;
-        });
+  Future<Result<Unit, DeckError>> createDeck(String name) async {
+    return (await _deckRepository.create(name)) //
+    .map((deck) {
+      decks.add(deck);
+      notifyListeners();
+      return unit;
+    });
+  }
+
+  Future<Result<Unit, DeckError>> fetchDecks() async {
+    final deckList = await _deckRepository.fetchAll();
+    return deckList.map((decks) {
+      _decks.clear();
+      _decks = decks;
+      notifyListeners();
+      return unit;
+    });
   }
 }

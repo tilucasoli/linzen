@@ -23,11 +23,14 @@ class PrimaryButton extends StatelessWidget {
     this.fullWidth = false,
     this.size = ButtonSize.medium,
     required this.onPressed,
+    required this.text,
   });
 
   final bool fullWidth;
   final VoidCallback onPressed;
   final ButtonSize size;
+  final String text;
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -50,7 +53,7 @@ class PrimaryButton extends StatelessWidget {
           ),
           backgroundColor: WidgetStateProperty.all(Color(0xFF2E333A)),
         ),
-        child: Text('Start Session'),
+        child: Text(text),
       ),
     );
   }

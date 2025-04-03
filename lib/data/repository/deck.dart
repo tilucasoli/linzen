@@ -1,43 +1,67 @@
+import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:linzen/data/local_database/model/deck.dart';
 import 'package:linzen/shared/result.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../domain/deck.dart';
+import '../../helper/cache.dart';
+import '../local_database/service/local_storage_service.dart';
 
-enum DeckError implements Exception { duplicateDeck }
+typedef LocalDeckStorage = LocalStorageService<LocalDeck>;
+
+enum DeckError implements Exception { duplicateDeck, databaseError }
 
 class DeckRepository {
-  final DeckDatabase _deckDatabase;
+  final _uuid = Uuid();
+  final LocalDeckStorage _localDeckStorageService;
+  final Cache<List<Deck>> _decksCache = Cache();
 
-  DeckRepository({required DeckDatabase deckDatabase})
-    : _deckDatabase = deckDatabase;
+  DeckRepository({required LocalDeckStorage localDeckStorageService})
+    : _localDeckStorageService = localDeckStorageService;
 
-  final List<Deck> _cachedDecks = [];
+  // FETCH
+  Future<Result<List<Deck>, DeckError>> fetchAll() async {
+    if (_decksCache.isEmpty) {
+      final result = await _localDeckStorageService.fetchAll();
 
-  Result<List<Deck>, DeckError> fetchAll() {
-    return Success(value: _cachedDecks);
-  }
+      switch (result) {
+        case Success(value: final localDecks):
+          final decks = localDecks.map(LocalDeckX.toDomain).toList();
+          _decksCache.setCache(decks);
 
-  Result<Deck, DeckError> create(String name) {
-    if (_verifyIfDeckExists(name)) {
-      return Failure(error: DeckError.duplicateDeck);
+          return Success(value: decks);
+
+        case Failure():
+          return Failure(error: DeckError.databaseError);
+      }
     }
 
-    final deck = Deck(id: '1', name: name, createdAt: DateTime.now());
-    _cachedDecks.add(deck);
-
-    return Success(value: deck);
+    return Success(value: _decksCache.cache!);
   }
 
-  bool _verifyIfDeckExists(String name) {
-    return _cachedDecks.any((deck) => deck.name == name);
-  }
-}
+  // CREATE
+  Future<Result<Deck, DeckError>> create(String name) async {
+    if (await _verifyIfDeckExists(name)) {
+      return Failure(error: DeckError.duplicateDeck);
+    }
+    final deck = LocalDeck(
+      id: _uuid.v4(),
+      name: name,
+      createdAt: DateTime.now(),
+    );
+    _localDeckStorageService.create(deck);
 
-class DeckDatabase {
-  Future<List<Deck>> fetchAll() async {
-    return [];
+    return Success(value: LocalDeckX.toDomain(deck));
   }
 
-  Future<Deck> create(String name) async {
-    return Deck(id: '1', name: name, createdAt: DateTime.now());
+  Future<bool> _verifyIfDeckExists(String name) async {
+    final decks = await _localDeckStorageService.fetchAll();
+
+    switch (decks) {
+      case Success(value: final decks):
+        return decks.any((deck) => deck.name == name);
+      case Failure():
+        return false;
+    }
   }
 }
