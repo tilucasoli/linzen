@@ -2,8 +2,6 @@ import 'package:elegant_spring_animation/elegant_spring_animation.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
-import 'button.dart';
-
 Future<T?> showLinzenBottomSheet<T>(
   BuildContext context, {
   required String title,
