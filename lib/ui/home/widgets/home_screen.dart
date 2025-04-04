@@ -116,7 +116,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class _DeletionSlidableButton extends StatelessWidget {
   const _DeletionSlidableButton({
-    super.key,
     required this.viewModel,
     required this.index,
   });
@@ -240,7 +239,19 @@ class _CreateDeckState extends State<_CreateDeck> {
           buttonBuilder: (context) {
             return LinzenButton(
               onPressed: () {
-                widget.viewModel.createDeck(_controller.text);
+                if(_controller.text.isEmpty){
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Try naming the deck!'),
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: Colors.red
+                      ));
+                }  
+                else{
+                  widget.viewModel.createDeck(_controller.text);
+                  Navigator.pop(context);
+                }
               },
               size: ButtonSize.large,
               fullWidth: true,
