@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:linzen/ui/home/viewmodel/deck_viewmodel.dart';
 import 'package:linzen/ui/shared/components/create_button_card.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../shared/components/bottom_sheet.dart';
 import '../../shared/components/button.dart';
+import '../../shared/components/slidable_action_button.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.viewModel});
@@ -79,9 +82,24 @@ class _HomeScreenState extends State<HomeScreen> {
                       return SizedBox(height: 16);
                     },
                     itemBuilder: (context, index) {
-                      return _DeckCard(
-                        title: widget.viewModel.decks[index].name,
-                        subtitle: 'not implemented',
+                      return Slidable(
+                        key: Key(widget.viewModel.decks[index].id),
+                        endActionPane: ActionPane(
+                          motion: ScrollMotion(),
+                          children: [
+                            _DeletionSlidableButton(
+                              viewModel: widget.viewModel,
+                              index: index,
+                            ),
+                          ],
+                        ),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: _DeckCard(
+                            title: widget.viewModel.decks[index].name,
+                            subtitle: 'not implemented',
+                          ),
+                        ),
                       );
                     },
                   );
@@ -92,6 +110,74 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       backgroundColor: Color(0xFFEAEBEF),
+    );
+  }
+}
+
+class _DeletionSlidableButton extends StatelessWidget {
+  const _DeletionSlidableButton({
+    super.key,
+    required this.viewModel,
+    required this.index,
+  });
+
+  final DeckViewModel viewModel;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    return SlidableActionButton(
+      icon: LucideIcons.trash2,
+      onPressed: () {
+        showLinzenBottomSheet(
+          context,
+          title: 'Confirm Deletion',
+          contentBuilder: (context) {
+            return Column(
+              spacing: 8,
+              children: [
+                TextField(
+                  enabled: false,
+                  controller: TextEditingController(
+                    text: viewModel.decks[index].name,
+                  ),
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    hintText: 'Deck Name',
+                  ),
+                ),
+                Text(
+                  'This deck and all its cards will be deleted. Are you sure you want to do that?',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    fontFamily: 'Inter',
+                  ),
+                ),
+              ],
+            );
+          },
+          buttonBuilder: (BuildContext context) {
+            return LinzenButton(
+              fullWidth: true,
+              type: ButtonType.destructive,
+              size: ButtonSize.large,
+              onPressed: () {
+                viewModel.deleteDeck(viewModel.decks[index].id);
+                Navigator.pop(context);
+              },
+              text: 'Delete',
+            );
+          },
+        );
+      },
+      backgroundColor: Color(0xFFF84F39),
+      padding: EdgeInsets.only(left: 8),
     );
   }
 }
@@ -152,7 +238,7 @@ class _CreateDeckState extends State<_CreateDeck> {
             );
           },
           buttonBuilder: (context) {
-            return PrimaryButton(
+            return LinzenButton(
               onPressed: () {
                 widget.viewModel.createDeck(_controller.text);
               },
@@ -318,7 +404,7 @@ class StartSessionCard extends StatelessWidget {
           SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: PrimaryButton(onPressed: () {}, text: 'Start Session'),
+            child: LinzenButton(onPressed: () {}, text: 'Start Session'),
           ),
         ],
       ),

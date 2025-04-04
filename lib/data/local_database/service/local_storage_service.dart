@@ -19,10 +19,20 @@ class LocalStorageService<T> {
   }
 
   // CREATE
-  Result<T, LocalStorageError> create(T item) {
+  Result<T, LocalStorageError> create(String id, T item) {
     try {
-      _box.add(item);
+      _box.put(id, item);
       return Success(value: item);
+    } catch (e) {
+      return Failure(error: LocalStorageError.databaseError);
+    }
+  }
+
+  // DELETE
+  Future<Result<Unit, LocalStorageError>> delete(String id) async {
+    try {
+      await _box.delete(id);
+      return Success.unit();
     } catch (e) {
       return Failure(error: LocalStorageError.databaseError);
     }

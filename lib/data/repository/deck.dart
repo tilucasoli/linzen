@@ -4,7 +4,7 @@ import 'package:linzen/shared/result.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../domain/deck.dart';
-import '../../helper/cache.dart';
+import '../helper/cache.dart';
 import '../local_database/service/local_storage_service.dart';
 
 typedef LocalDeckStorage = LocalStorageService<LocalDeck>;
@@ -49,7 +49,7 @@ class DeckRepository {
       name: name,
       createdAt: DateTime.now(),
     );
-    _localDeckStorageService.create(deck);
+    _localDeckStorageService.create(deck.id, deck);
 
     return Success(value: LocalDeckX.toDomain(deck));
   }
@@ -62,6 +62,17 @@ class DeckRepository {
         return decks.any((deck) => deck.name == name);
       case Failure():
         return false;
+    }
+  }
+
+  Future<Result<Unit, DeckError>> delete(String id) async {
+    final result = await _localDeckStorageService.delete(id);
+    switch (result) {
+      case Success():
+        _decksCache.clearCache();
+        return Success.unit();
+      case Failure():
+        return Failure(error: DeckError.databaseError);
     }
   }
 }

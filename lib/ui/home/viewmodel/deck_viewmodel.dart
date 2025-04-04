@@ -31,4 +31,13 @@ class DeckViewModel extends ChangeNotifier {
       return unit;
     });
   }
+
+  Future<Result<Unit, DeckError>> deleteDeck(String id) async {
+    final result = await _deckRepository.delete(id);
+    return result.map((unit) {
+      _decks.removeWhere((deck) => deck.id == id);
+      notifyListeners();
+      return unit;
+    });
+  }
 }
