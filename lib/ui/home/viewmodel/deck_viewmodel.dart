@@ -14,13 +14,14 @@ class DeckViewModel extends ChangeNotifier {
   List<Deck> get decks => _decks;
 
   Future<Result<Unit, DeckError>> createDeck(String name) async {
-    return (await _deckRepository.create(name)) //
-    .map((deck) {
-      decks.add(deck);
-      notifyListeners();
-      return unit;
-    });
-  }
+  final result = await _deckRepository.create(name);
+
+  return result.map((deck) {
+    _decks.add(deck); 
+    notifyListeners(); 
+    return unit; 
+  });
+}
 
   Future<Result<Unit, DeckError>> fetchDecks() async {
     final deckList = await _deckRepository.fetchAll();
@@ -39,5 +40,18 @@ class DeckViewModel extends ChangeNotifier {
       notifyListeners();
       return unit;
     });
+  }
+
+  Future<Result<Unit, DeckError>> renameDeck(String id, String newName) async {
+  final result = await _deckRepository.rename(id, newName);
+
+  return result.map((unit) {
+    final deckIndex = _decks.indexWhere((deck) => deck.id == id);
+    if (deckIndex != -1) {
+      _decks[deckIndex] = _decks[deckIndex].copyWith(name: newName);
+    }
+    notifyListeners();
+    return unit;
+  });
   }
 }

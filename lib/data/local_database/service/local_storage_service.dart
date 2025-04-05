@@ -9,6 +9,19 @@ class LocalStorageService<T> {
   LocalStorageService(Box<T> box) : _box = box;
 
   // FETCH
+  Future<Result<T, LocalStorageError>> fetch(String id) async {
+    try {
+      final item = _box.get(id);
+      if (item == null) {
+        return Failure(error: LocalStorageError.databaseError);
+      }
+      return Success(value: item);
+    } catch (e) {
+      return Failure(error: LocalStorageError.databaseError);
+    }
+  }
+  
+  // FETCH ALL
   Future<Result<List<T>, LocalStorageError>> fetchAll() async {
     try {
       final items = _box.values.toList();
@@ -37,4 +50,18 @@ class LocalStorageService<T> {
       return Failure(error: LocalStorageError.databaseError);
     }
   }
+
+  // UPDATE
+  Future<Result<Unit, LocalStorageError>> update(String id, T item) async {
+  try {
+    if (_box.containsKey(id)) {
+      await _box.put(id, item);
+      return Success.unit();
+    } else {
+      return Failure(error: LocalStorageError.databaseError);
+    }
+  } catch (e) {
+    return Failure(error: LocalStorageError.databaseError);
+  }
+}
 }

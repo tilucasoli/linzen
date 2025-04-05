@@ -79,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   return SliverList.separated(
                     itemCount: widget.viewModel.decks.length,
                     separatorBuilder: (context, index) {
-                      return SizedBox(height: 16);
+                      return SizedBox(height: 16);  
                     },
                     itemBuilder: (context, index) {
                       return Slidable(
@@ -87,6 +87,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         endActionPane: ActionPane(
                           motion: ScrollMotion(),
                           children: [
+                            _RenameSlidableButton(
+                              viewModel: widget.viewModel,
+                              index: index,
+                            ),
                             _DeletionSlidableButton(
                               viewModel: widget.viewModel,
                               index: index,
@@ -113,6 +117,92 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
+class _RenameSlidableButton extends StatelessWidget {
+  const _RenameSlidableButton({
+    required this.viewModel,
+    required this.index,
+  });
+
+  final DeckViewModel viewModel;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextEditingController _controller = TextEditingController(
+      text: viewModel.decks[index].name,
+    );
+
+    return SlidableActionButton(
+      icon: LucideIcons.pencil,
+      onPressed: () {
+        showLinzenBottomSheet(
+          context,
+          title: 'Rename Deck',
+          contentBuilder: (context) {
+            return Column(
+              spacing: 8,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: _controller,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    hintText: 'New Deck Name',
+                  ),
+                ),
+                Text(
+                  'This is the name that will be used to describe the deck.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF64748B),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            );
+          },
+          buttonBuilder: (context) {
+            return LinzenButton(
+              onPressed: () {
+                if (_controller.text.isEmpty) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Deck name cannot be empty!'),
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                } else {
+                  viewModel.renameDeck(
+                    viewModel.decks[index].id,
+                    _controller.text,
+                  );
+                  Navigator.pop(context);
+                }
+              },
+              size: ButtonSize.large,
+              fullWidth: true,
+              text: 'Save',
+            );
+          },
+        );
+      },
+      backgroundColor: Color(0xFF2590F2),
+      padding: EdgeInsets.only(left: 8),
+    );
+  }
+}
+
+
+
 
 class _DeletionSlidableButton extends StatelessWidget {
   const _DeletionSlidableButton({
@@ -181,6 +271,7 @@ class _DeletionSlidableButton extends StatelessWidget {
   }
 }
 
+
 class _CreateDeck extends StatefulWidget {
   const _CreateDeck({required this.viewModel});
 
@@ -238,25 +329,46 @@ class _CreateDeckState extends State<_CreateDeck> {
           },
           buttonBuilder: (context) {
             return LinzenButton(
-              onPressed: () {
-                if(_controller.text.isEmpty){
+              onPressed: () async {
+                if (_controller.text.isEmpty) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Try naming the deck!'),
+                      content: Text('Deck name cannot be empty!'),
                       behavior: SnackBarBehavior.floating,
-                      backgroundColor: Colors.red
-                      ));
-                }  
-                else{
-                  widget.viewModel.createDeck(_controller.text);
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                } else {
+                  final result = await widget.viewModel.createDeck(_controller.text);
                   Navigator.pop(context);
-                }
-              },
-              size: ButtonSize.large,
-              fullWidth: true,
-              text: 'Create',
-            );
+
+                  result.when(
+                    success: (_) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Deck created successfully!'),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    },
+                    failure: (error) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to create deck: ${error.toString()}'),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    },
+      );
+    }
+  },
+  size: ButtonSize.large,
+  fullWidth: true,
+  text: 'Create',
+);
           },
         );
       },

@@ -6,6 +6,8 @@ sealed class Result<T, E extends Exception> {
   Result<T, NewError> mapError<NewError extends Exception>(
     NewError Function(E) f,
   );
+
+  void when({required Null Function(dynamic _) success, required Null Function(dynamic error) failure}) {}
 }
 
 class Success<T, E extends Exception> extends Result<T, E> {
