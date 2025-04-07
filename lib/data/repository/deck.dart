@@ -1,67 +1,93 @@
-import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:linzen/data/local_database/model/deck.dart';
-import 'package:linzen/shared/result.dart';
+import 'package:result_dart/result_dart.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../domain/deck.dart';
-import '../../helper/cache.dart';
 import '../local_database/service/local_storage_service.dart';
 
 typedef LocalDeckStorage = LocalStorageService<LocalDeck>;
 
-enum DeckError implements Exception { duplicateDeck, databaseError }
+enum DeckError implements Exception {
+  duplicateDeck,
+  databaseError,
+  emptyDeckName,
+}
 
 class DeckRepository {
   final _uuid = Uuid();
   final LocalDeckStorage _localDeckStorageService;
-  final Cache<List<Deck>> _decksCache = Cache();
 
   DeckRepository({required LocalDeckStorage localDeckStorageService})
     : _localDeckStorageService = localDeckStorageService;
 
   // FETCH
-  Future<Result<List<Deck>, DeckError>> fetchAll() async {
-    if (_decksCache.isEmpty) {
-      final result = await _localDeckStorageService.fetchAll();
+  Future<ResultDart<Deck, DeckError>> fetch(String id) async {
+    // Busca o deck pelo ID no armazenamento local
+    return (await _localDeckStorageService.fetch(id))
+        .map((localDeck) => LocalDeckX.toDomain(localDeck))
+        .mapError((error) => DeckError.databaseError);
+  }
 
-      switch (result) {
-        case Success(value: final localDecks):
-          final decks = localDecks.map(LocalDeckX.toDomain).toList();
-          _decksCache.setCache(decks);
-
-          return Success(value: decks);
-
-        case Failure():
-          return Failure(error: DeckError.databaseError);
-      }
-    }
-
-    return Success(value: _decksCache.cache!);
+  // FETCH ALL
+  Future<ResultDart<List<Deck>, DeckError>> fetchAll() async {
+    return (await _localDeckStorageService.fetchAll())
+        .map((localDecks) => localDecks.map(LocalDeckX.toDomain).toList())
+        .mapError((error) => DeckError.databaseError);
   }
 
   // CREATE
-  Future<Result<Deck, DeckError>> create(String name) async {
-    if (await _verifyIfDeckExists(name)) {
-      return Failure(error: DeckError.duplicateDeck);
+  AsyncResultDart<Deck, DeckError> create(String name) async {
+    if (name.isEmpty) {
+      return Failure(DeckError.emptyDeckName);
     }
-    final deck = LocalDeck(
+
+    final existsResult = await _verifyIfDeckExists(name);
+
+    if (existsResult is Failure) {
+      return Failure(DeckError.duplicateDeck);
+    }
+
+    final localDeck = LocalDeck(
       id: _uuid.v4(),
       name: name,
       createdAt: DateTime.now(),
     );
-    _localDeckStorageService.create(deck);
 
-    return Success(value: LocalDeckX.toDomain(deck));
+    return (await _localDeckStorageService.create(localDeck.id, localDeck))
+        .map((localDeck) => LocalDeckX.toDomain(localDeck))
+        .mapError((error) => DeckError.databaseError);
   }
 
-  Future<bool> _verifyIfDeckExists(String name) async {
-    final decks = await _localDeckStorageService.fetchAll();
+  AsyncResultDart<Unit, DeckError> _verifyIfDeckExists(String name) async {
+    final result = await _localDeckStorageService.fetchAll();
 
-    switch (decks) {
-      case Success(value: final decks):
-        return decks.any((deck) => deck.name == name);
+    return result.fold(
+      (localDecks) =>
+          localDecks.any((deck) => deck.name == name)
+              ? Failure(DeckError.duplicateDeck)
+              : Success.unit(),
+      (error) => Failure(DeckError.databaseError),
+    );
+  }
+
+  AsyncResultDart<Unit, DeckError> delete(String id) async {
+    final result = await _localDeckStorageService.delete(id);
+    switch (result) {
+      case Success():
+        return Success.unit();
       case Failure():
-        return false;
+        return Failure(DeckError.databaseError);
     }
+  }
+
+  AsyncResultDart<LocalDeck, DeckError> update(
+    String id,
+    String newName,
+  ) async {
+    return await _localDeckStorageService
+        .fetch(id)
+        .map((localDeck) => localDeck.copyWith(name: newName))
+        .flatMap((localDeck) => _localDeckStorageService.update(id, localDeck))
+        .mapError((error) => DeckError.databaseError);
   }
 }

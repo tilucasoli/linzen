@@ -17,11 +17,26 @@ enum ButtonSize {
   }
 }
 
-class PrimaryButton extends StatelessWidget {
-  const PrimaryButton({
+enum ButtonType {
+  primary,
+  destructive;
+
+  Color get backgroundColor {
+    switch (this) {
+      case ButtonType.primary:
+        return Color(0xFF2E333A);
+      case ButtonType.destructive:
+        return Color(0xFFF84F39);
+    }
+  }
+}
+
+class LinzenButton extends StatelessWidget {
+  const LinzenButton({
     super.key,
     this.fullWidth = false,
     this.size = ButtonSize.medium,
+    this.type = ButtonType.primary,
     required this.onPressed,
     required this.text,
   });
@@ -30,6 +45,7 @@ class PrimaryButton extends StatelessWidget {
   final VoidCallback onPressed;
   final ButtonSize size;
   final String text;
+  final ButtonType type;
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +67,7 @@ class PrimaryButton extends StatelessWidget {
               fontFamily: 'Inter',
             ),
           ),
-          backgroundColor: WidgetStateProperty.all(Color(0xFF2E333A)),
+          backgroundColor: WidgetStateProperty.all(type.backgroundColor),
         ),
         child: Text(text),
       ),

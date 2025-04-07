@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:linzen/ui/home/viewmodel/deck_viewmodel.dart';
 import 'package:linzen/ui/shared/components/create_button_card.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../shared/components/bottom_sheet.dart';
 import '../../shared/components/button.dart';
+import '../../shared/components/slidable_action_button.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.viewModel});
@@ -79,9 +82,28 @@ class _HomeScreenState extends State<HomeScreen> {
                       return SizedBox(height: 16);
                     },
                     itemBuilder: (context, index) {
-                      return _DeckCard(
-                        title: widget.viewModel.decks[index].name,
-                        subtitle: 'not implemented',
+                      return Slidable(
+                        key: Key(widget.viewModel.decks[index].id),
+                        endActionPane: ActionPane(
+                          motion: ScrollMotion(),
+                          children: [
+                            _RenameSlidableButton(
+                              viewModel: widget.viewModel,
+                              index: index,
+                            ),
+                            _DeletionSlidableButton(
+                              viewModel: widget.viewModel,
+                              index: index,
+                            ),
+                          ],
+                        ),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: _DeckCard(
+                            title: widget.viewModel.decks[index].name,
+                            subtitle: 'not implemented',
+                          ),
+                        ),
                       );
                     },
                   );
@@ -92,6 +114,159 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       backgroundColor: Color(0xFFEAEBEF),
+    );
+  }
+}
+
+class _RenameSlidableButton extends StatefulWidget {
+  const _RenameSlidableButton({required this.viewModel, required this.index});
+
+  final DeckViewModel viewModel;
+  final int index;
+
+  @override
+  State<_RenameSlidableButton> createState() => _RenameSlidableButtonState();
+}
+
+class _RenameSlidableButtonState extends State<_RenameSlidableButton> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.text = widget.viewModel.decks[widget.index].name;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SlidableActionButton(
+      icon: LucideIcons.pencil,
+      onPressed: () {
+        showLinzenBottomSheet(
+          context,
+          title: 'Rename Deck',
+          contentBuilder: (context) {
+            return Column(
+              spacing: 8,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: _controller,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    hintText: 'New Deck Name',
+                  ),
+                ),
+                Text(
+                  'This is the name that will be used to describe the deck.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF64748B),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            );
+          },
+          buttonBuilder: (context) {
+            return LinzenButton(
+              onPressed: () {
+                if (_controller.text.isEmpty) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Deck name cannot be empty!'),
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                } else {
+                  widget.viewModel.updateDeck(
+                    widget.viewModel.decks[widget.index].id,
+                    _controller.text,
+                  );
+                  Navigator.pop(context);
+                }
+              },
+              size: ButtonSize.large,
+              fullWidth: true,
+              text: 'Save',
+            );
+          },
+        );
+      },
+      backgroundColor: Color(0xFF2590F2),
+      padding: EdgeInsets.only(left: 8),
+    );
+  }
+}
+
+class _DeletionSlidableButton extends StatelessWidget {
+  const _DeletionSlidableButton({required this.viewModel, required this.index});
+
+  final DeckViewModel viewModel;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    return SlidableActionButton(
+      icon: LucideIcons.trash2,
+      onPressed: () {
+        showLinzenBottomSheet(
+          context,
+          title: 'Confirm Deletion',
+          contentBuilder: (context) {
+            return Column(
+              spacing: 8,
+              children: [
+                TextField(
+                  enabled: false,
+                  controller: TextEditingController(
+                    text: viewModel.decks[index].name,
+                  ),
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    hintText: 'Deck Name',
+                  ),
+                ),
+                Text(
+                  'This deck and all its cards will be deleted. Are you sure you want to do that?',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    fontFamily: 'Inter',
+                  ),
+                ),
+              ],
+            );
+          },
+          buttonBuilder: (BuildContext context) {
+            return LinzenButton(
+              fullWidth: true,
+              type: ButtonType.destructive,
+              size: ButtonSize.large,
+              onPressed: () {
+                viewModel.deleteDeck(viewModel.decks[index].id);
+                Navigator.pop(context);
+              },
+              text: 'Delete',
+            );
+          },
+        );
+      },
+      backgroundColor: Color(0xFFF84F39),
+      padding: EdgeInsets.only(left: 8),
     );
   }
 }
@@ -152,9 +327,13 @@ class _CreateDeckState extends State<_CreateDeck> {
             );
           },
           buttonBuilder: (context) {
-            return PrimaryButton(
-              onPressed: () {
-                widget.viewModel.createDeck(_controller.text);
+            return LinzenButton(
+              onPressed: () async {
+                await widget.viewModel.createDeck(_controller.text);
+                if (context.mounted) {
+                  _controller.clear();
+                  Navigator.pop(context);
+                }
               },
               size: ButtonSize.large,
               fullWidth: true,
@@ -318,7 +497,7 @@ class StartSessionCard extends StatelessWidget {
           SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: PrimaryButton(onPressed: () {}, text: 'Start Session'),
+            child: LinzenButton(onPressed: () {}, text: 'Start Session'),
           ),
         ],
       ),

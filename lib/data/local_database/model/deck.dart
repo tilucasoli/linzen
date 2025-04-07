@@ -6,6 +6,18 @@ class LocalDeck {
   final DateTime createdAt;
 
   LocalDeck({required this.id, required this.name, required this.createdAt});
+
+  LocalDeck copyWith({
+    String? id,
+    String? name,
+    DateTime? createdAt,
+  }) {
+    return LocalDeck(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 }
 
 extension LocalDeckX on LocalDeck {
