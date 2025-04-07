@@ -3,15 +3,22 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:linzen/ui/home/viewmodel/deck_viewmodel.dart';
 import 'package:linzen/ui/shared/components/create_button_card.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:result_command/result_command.dart';
 
+import '../../alert/alert_viewmodel.dart';
 import '../../shared/components/bottom_sheet.dart';
 import '../../shared/components/button.dart';
 import '../../shared/components/slidable_action_button.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, required this.viewModel});
+  const HomeScreen({
+    super.key,
+    required this.viewModel,
+    required this.alertViewModel,
+  });
 
   final DeckViewModel viewModel;
+  final AlertViewModel alertViewModel;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -51,7 +58,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
-                  _CreateDeck(viewModel: widget.viewModel),
+                  _CreateDeck(
+                    viewModel: widget.viewModel,
+                    alertViewModel: widget.alertViewModel,
+                  ),
                   StartSessionCard(),
                 ],
               ),
@@ -89,6 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             _RenameSlidableButton(
                               viewModel: widget.viewModel,
+                              alertViewModel: widget.alertViewModel,
                               index: index,
                             ),
                             _DeletionSlidableButton(
@@ -119,9 +130,14 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _RenameSlidableButton extends StatefulWidget {
-  const _RenameSlidableButton({required this.viewModel, required this.index});
+  const _RenameSlidableButton({
+    required this.viewModel,
+    required this.alertViewModel,
+    required this.index,
+  });
 
   final DeckViewModel viewModel;
+  final AlertViewModel alertViewModel;
   final int index;
 
   @override
@@ -176,21 +192,20 @@ class _RenameSlidableButtonState extends State<_RenameSlidableButton> {
           },
           buttonBuilder: (context) {
             return LinzenButton(
-              onPressed: () {
-                if (_controller.text.isEmpty) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Deck name cannot be empty!'),
-                      behavior: SnackBarBehavior.floating,
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                } else {
-                  widget.viewModel.updateDeck(
-                    widget.viewModel.decks[widget.index].id,
-                    _controller.text,
-                  );
+              onPressed: () async {
+                final result = await widget.viewModel.updateDeck(
+                  widget.viewModel.decks[widget.index].id,
+                  _controller.text,
+                );
+
+                if (!context.mounted) return;
+
+                if (result.isError()) {
+                  widget.alertViewModel.show('Failed to rename deck');
+                  return;
+                }
+
+                if (result.isSuccess()) {
                   Navigator.pop(context);
                 }
               },
@@ -265,16 +280,17 @@ class _DeletionSlidableButton extends StatelessWidget {
           },
         );
       },
-      backgroundColor: Color(0xFFF84F39),
+      backgroundColor: Color(0xFFEC375A),
       padding: EdgeInsets.only(left: 8),
     );
   }
 }
 
 class _CreateDeck extends StatefulWidget {
-  const _CreateDeck({required this.viewModel});
+  const _CreateDeck({required this.viewModel, required this.alertViewModel});
 
   final DeckViewModel viewModel;
+  final AlertViewModel alertViewModel;
 
   @override
   State<_CreateDeck> createState() => _CreateDeckState();
@@ -329,12 +345,23 @@ class _CreateDeckState extends State<_CreateDeck> {
           buttonBuilder: (context) {
             return LinzenButton(
               onPressed: () async {
-                await widget.viewModel.createDeck(_controller.text);
-                if (context.mounted) {
+                final command = widget.viewModel.createDeck;
+                await command.execute(_controller.text);
+
+                if (!context.mounted) return;
+
+                if (command.isFailure) {
+                  widget.alertViewModel.show('Failed to create deck');
+                  return;
+                }
+
+                if (command.isSuccess) {
                   _controller.clear();
                   Navigator.pop(context);
+                  return;
                 }
               },
+
               size: ButtonSize.large,
               fullWidth: true,
               text: 'Create',

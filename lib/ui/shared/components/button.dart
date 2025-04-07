@@ -26,7 +26,7 @@ enum ButtonType {
       case ButtonType.primary:
         return Color(0xFF2E333A);
       case ButtonType.destructive:
-        return Color(0xFFF84F39);
+        return Color(0xFFEC375A);
     }
   }
 }
