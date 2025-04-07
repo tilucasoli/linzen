@@ -79,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   return SliverList.separated(
                     itemCount: widget.viewModel.decks.length,
                     separatorBuilder: (context, index) {
-                      return SizedBox(height: 16);  
+                      return SizedBox(height: 16);
                     },
                     itemBuilder: (context, index) {
                       return Slidable(
@@ -118,21 +118,27 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _RenameSlidableButton extends StatelessWidget {
-  const _RenameSlidableButton({
-    required this.viewModel,
-    required this.index,
-  });
+class _RenameSlidableButton extends StatefulWidget {
+  const _RenameSlidableButton({required this.viewModel, required this.index});
 
   final DeckViewModel viewModel;
   final int index;
 
   @override
-  Widget build(BuildContext context) {
-    final TextEditingController _controller = TextEditingController(
-      text: viewModel.decks[index].name,
-    );
+  State<_RenameSlidableButton> createState() => _RenameSlidableButtonState();
+}
 
+class _RenameSlidableButtonState extends State<_RenameSlidableButton> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.text = widget.viewModel.decks[widget.index].name;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return SlidableActionButton(
       icon: LucideIcons.pencil,
       onPressed: () {
@@ -181,8 +187,8 @@ class _RenameSlidableButton extends StatelessWidget {
                     ),
                   );
                 } else {
-                  viewModel.renameDeck(
-                    viewModel.decks[index].id,
+                  widget.viewModel.updateDeck(
+                    widget.viewModel.decks[widget.index].id,
                     _controller.text,
                   );
                   Navigator.pop(context);
@@ -201,14 +207,8 @@ class _RenameSlidableButton extends StatelessWidget {
   }
 }
 
-
-
-
 class _DeletionSlidableButton extends StatelessWidget {
-  const _DeletionSlidableButton({
-    required this.viewModel,
-    required this.index,
-  });
+  const _DeletionSlidableButton({required this.viewModel, required this.index});
 
   final DeckViewModel viewModel;
   final int index;
@@ -271,7 +271,6 @@ class _DeletionSlidableButton extends StatelessWidget {
   }
 }
 
-
 class _CreateDeck extends StatefulWidget {
   const _CreateDeck({required this.viewModel});
 
@@ -330,45 +329,16 @@ class _CreateDeckState extends State<_CreateDeck> {
           buttonBuilder: (context) {
             return LinzenButton(
               onPressed: () async {
-                if (_controller.text.isEmpty) {
+                await widget.viewModel.createDeck(_controller.text);
+                if (context.mounted) {
+                  _controller.clear();
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Deck name cannot be empty!'),
-                      behavior: SnackBarBehavior.floating,
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                } else {
-                  final result = await widget.viewModel.createDeck(_controller.text);
-                  Navigator.pop(context);
-
-                  result.when(
-                    success: (_) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Deck created successfully!'),
-                          behavior: SnackBarBehavior.floating,
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    },
-                    failure: (error) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Failed to create deck: ${error.toString()}'),
-                          behavior: SnackBarBehavior.floating,
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    },
-      );
-    }
-  },
-  size: ButtonSize.large,
-  fullWidth: true,
-  text: 'Create',
-);
+                }
+              },
+              size: ButtonSize.large,
+              fullWidth: true,
+              text: 'Create',
+            );
           },
         );
       },
