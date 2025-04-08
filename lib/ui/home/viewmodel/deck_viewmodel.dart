@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:collection/collection.dart';
 import 'package:linzen/domain/deck.dart';
+import 'package:result_command/result_command.dart';
 import 'package:result_dart/result_dart.dart';
 
 import '../../../data/repository/deck.dart';
@@ -14,31 +15,34 @@ class DeckViewModel extends ChangeNotifier {
   List<Deck> _decks = [];
   List<Deck> get decks => _decks;
 
-  Future<ResultDart<Unit, DeckError>> createDeck(String name) async {
+  late final createDeck = Command1<Unit, String>((name) async {
+    if (_decks.any((deck) => deck.name == name)) {
+      return Failure(DeckError.duplicateDeck);
+    }
+
     return await _deckRepository
         .create(name) //
         .map((deck) {
-          _decks.add(deck);
+          _decks.insert(0, deck);
           notifyListeners();
           return unit;
         });
-  }
+  });
 
-  Future<ResultDart<Unit, DeckError>> fetchDecks() async {
+  late final fetchDecks = Command0<Unit>(() async {
     return await _deckRepository
         .fetchAll() //
         .map(
           (decks) => decks.sorted((a, b) => b.createdAt.compareTo(a.createdAt)),
         )
         .map((decks) {
-          _decks.clear();
           _decks = decks;
           notifyListeners();
           return unit;
         });
-  }
+  });
 
-  Future<ResultDart<Unit, DeckError>> deleteDeck(String id) async {
+  late final deleteDeck = Command1<Unit, String>((id) async {
     return await _deckRepository
         .delete(id) //
         .map((unit) {
@@ -46,12 +50,13 @@ class DeckViewModel extends ChangeNotifier {
           notifyListeners();
           return unit;
         });
-  }
+  });
 
-  Future<ResultDart<Unit, DeckError>> updateDeck(
-    String id,
-    String newName,
-  ) async {
+  late final updateDeck = Command2<Unit, String, String>((id, newName) async {
+    if (newName.isEmpty) {
+      return Failure(DeckError.emptyDeckName);
+    }
+
     return await _deckRepository
         .update(id, newName) //
         .map((localDeck) {
@@ -62,5 +67,5 @@ class DeckViewModel extends ChangeNotifier {
           notifyListeners();
           return unit;
         });
-  }
+  });
 }

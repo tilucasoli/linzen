@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:linzen/data/local_database/model/deck.dart';
 import 'package:linzen/data/local_database/model/hive_adaptors/adaptors.dart';
+import 'package:linzen/ui/alert/alert.dart';
+
+import 'package:linzen/ui/alert/alert_viewmodel.dart';
 import 'package:provider/provider.dart';
 
 import 'data/local_database/service/local_storage_service.dart';
@@ -26,6 +29,7 @@ Future<void> main() async {
                 ),
               ),
         ),
+        Provider(create: (context) => AlertViewModel()),
       ],
       child: const MyApp(),
     ),
@@ -42,7 +46,13 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: HomeScreen(viewModel: context.read()),
+      builder:
+          (context, child) =>
+              AlertProvider(viewModel: context.read(), child: child!),
+      home: HomeScreen(
+        viewModel: context.read(),
+        alertViewModel: context.read(),
+      ),
     );
   }
 }

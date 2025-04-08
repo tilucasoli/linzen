@@ -58,16 +58,14 @@ class DeckRepository {
         .mapError((error) => DeckError.databaseError);
   }
 
-  AsyncResultDart<Unit, DeckError> _verifyIfDeckExists(String name) async {
+  Future<bool> _verifyIfDeckExists(String name) async {
     final result = await _localDeckStorageService.fetchAll();
-
-    return result.fold(
-      (localDecks) =>
-          localDecks.any((deck) => deck.name == name)
-              ? Failure(DeckError.duplicateDeck)
-              : Success.unit(),
-      (error) => Failure(DeckError.databaseError),
-    );
+    switch (result) {
+      case Success():
+        return result.getOrNull().any((deck) => deck.name == name);
+      case Failure():
+        return false;
+    }
   }
 
   AsyncResultDart<Unit, DeckError> delete(String id) async {
@@ -84,6 +82,10 @@ class DeckRepository {
     String id,
     String newName,
   ) async {
+    if (await _verifyIfDeckExists(newName)) {
+      return Failure(DeckError.duplicateDeck);
+    }
+
     return await _localDeckStorageService
         .fetch(id)
         .map((localDeck) => localDeck.copyWith(name: newName))
