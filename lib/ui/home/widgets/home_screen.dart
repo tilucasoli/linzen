@@ -3,7 +3,6 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:linzen/ui/home/viewmodel/deck_viewmodel.dart';
 import 'package:linzen/ui/shared/components/create_button_card.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:result_command/result_command.dart';
 
 import '../../alert/alert_viewmodel.dart';
 import '../../shared/components/bottom_sheet.dart';
@@ -28,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    widget.viewModel.fetchDecks();
+    widget.viewModel.fetchDecks.execute();
   }
 
   @override
@@ -193,19 +192,20 @@ class _RenameSlidableButtonState extends State<_RenameSlidableButton> {
           buttonBuilder: (context) {
             return LinzenButton(
               onPressed: () async {
-                final result = await widget.viewModel.updateDeck(
+                final command = widget.viewModel.updateDeck;
+                await command.execute(
                   widget.viewModel.decks[widget.index].id,
                   _controller.text,
                 );
 
                 if (!context.mounted) return;
 
-                if (result.isError()) {
+                if (command.isFailure) {
                   widget.alertViewModel.show('Failed to rename deck');
                   return;
                 }
 
-                if (result.isSuccess()) {
+                if (command.isSuccess) {
                   Navigator.pop(context);
                 }
               },
@@ -272,7 +272,7 @@ class _DeletionSlidableButton extends StatelessWidget {
               type: ButtonType.destructive,
               size: ButtonSize.large,
               onPressed: () {
-                viewModel.deleteDeck(viewModel.decks[index].id);
+                viewModel.deleteDeck.execute(viewModel.decks[index].id);
                 Navigator.pop(context);
               },
               text: 'Delete',
